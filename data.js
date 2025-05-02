@@ -44,31 +44,36 @@ d3.csv("chocolate-sales.csv").then((dataset) => {
 
 function buildTable(data) {
     const tableContainer = d3.select("#data-table");
+    tableContainer.selectAll("*").remove();
+
     const table = tableContainer.append("table").attr("class", "datatable");
     const head = table.append("thead");
     const body = table.append("tbody");
 
     const fields = ["Sales Person", "Country", "Product", "Date", "Amount", "Boxes Shipped"];
+    let filtered = data.slice();
 
+    // --- Header row with sort ---
     const headerRow = head.append("tr");
     fields.forEach(field => {
-        const th = headerRow.append("th")
+        headerRow.append("th")
             .html(`${field} <span class="sort-arrow"></span>`)
+            .style("position", "relative")
             .on("click", function() {
-
                 let asc = !d3.select(this).classed("asc");
                 d3.selectAll("th").classed("asc", false).classed("desc", false).select(".sort-arrow").text("");
                 d3.select(this).classed(asc ? "asc" : "desc", true)
                     .select(".sort-arrow")
                     .text(asc ? "▲" : "▼");
-                let sorted = data.slice().sort((a, b) => {
+                filtered = filtered.slice().sort((a, b) => {
                     if (asc) return d3.ascending(a[field], b[field]);
                     else return d3.descending(a[field], b[field]);
                 });
-                showRows(sorted.slice(currentPg * perPg, (currentPg + 1) * perPg));
+                showRows(filtered);
             });
     });
 
+    // --- Filter row ---
     const filterRow = head.append("tr");
     fields.forEach(field => {
         const th = filterRow.append("th");
@@ -79,9 +84,8 @@ function buildTable(data) {
                 .style("width", "100%")
                 .on("input", function() {
                     const val = this.value.toLowerCase();
-                    let filtered = data.filter(d => d[field].toString().toLowerCase().includes(val));
-                    showRows(filtered.slice(currentPg * perPg, (currentPg + 1) * perPg));
-                    paginate(filtered);
+                    filtered = data.filter(d => d[field].toString().toLowerCase().includes(val));
+                    showRows(filtered);
                 });
         } else {
             let options = Array.from(new Set(data.map(d => d[field])));
@@ -91,9 +95,8 @@ function buildTable(data) {
                 .style("width", "100%")
                 .on("change", function() {
                     let chosen = this.value;
-                    let filtered = chosen === "All" ? data : data.filter(d => d[field] === chosen);
-                    showRows(filtered.slice(currentPg * perPg, (currentPg + 1) * perPg));
-                    paginate(filtered);
+                    filtered = chosen === "All" ? data : data.filter(d => d[field] === chosen);
+                    showRows(filtered);
                 });
             select.selectAll("option")
                 .data(options)
@@ -103,17 +106,9 @@ function buildTable(data) {
         }
     });
 
-    const perPg = 10;
-    let currentPg = 0;
-    let colWidths = [];
-
     function showRows(rowsData) {
-        const trs = body.selectAll("tr").data(rowsData, d => d.Product);
+        const trs = body.selectAll("tr").data(rowsData, d => d.Product + d.Date + d.Amount);
         trs.exit().remove();
-
-        if (colWidths.length === 0) {
-            colWidths = table.selectAll("th").nodes().map(th => th.getBoundingClientRect().width);
-        }
 
         const newTrs = trs.enter()
             .append("tr")
@@ -128,47 +123,14 @@ function buildTable(data) {
                 col === "Date" ? d3.timeFormat("%Y. %m. %d")(row[col]) : row[col]
             ))
             .join("td")
-            .style("width", (d, i) => `${colWidths[i]}px`)
             .text(d => d);
     }
 
-    function paginate(filtered = data) {
-        const totalPgs = Math.ceil(filtered.length / perPg);
-        d3.select("#pagination-controls").remove();
-
-        const pagDiv = tableContainer.append("div")
-            .attr("id", "pagination-controls")
-            .style("margin-top", "10px");
-
-        pagDiv.append("div")
-            .attr("class", "pagination-info")
-            .text(() => {
-                const start = currentPg * perPg + 1;
-                const end = Math.min((currentPg + 1) * perPg, filtered.length);
-                return `Showing ${start} to ${end} of ${filtered.length} entries`;
-            });
-
-        const btnWrap = pagDiv.append("div")
-            .attr("class", "pagination-wrapper")
-            .style("display", "flex")
-            .style("justify-content", "center");
-
-        for (let p = 1; p <= totalPgs; ++p) {
-            btnWrap.append("button")
-                .attr("class", "page-btn")
-                .text(p)
-                .style("margin", "0 5px")
-                .on("click", () => {
-                    currentPg = p - 1;
-                    showRows(filtered.slice(currentPg * perPg, (currentPg + 1) * perPg));
-                    paginate(filtered);
-                });
-        }
-    }
-
-    showRows(data.slice(0, perPg));
-    paginate();
+    showRows(filtered);
 }
+
+
+
 function buildAreaChart(data) {
     const margin = { top: 20, right: 15, bottom: 60, left: 45 };
     const contextMargin = { top: 20, right: 15, bottom: 20, left: 45 };
