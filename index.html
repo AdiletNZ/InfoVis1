@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chocolate Sales Dashboard</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <main id="dashboard" class="dashboard">
+        <header class="dashboard-header">
+            <h1 class="dashboard-title">Chocolate Sales Dashboard</h1>
+            <button id="reset-btn" class="dashboard-reset-btn" type="button">Reset Filters</button>
+        </header>
+        <section class="dashboard-charts">
+            <figure id="area-chart" class="chart-section" aria-label="Sales Over Time Area Chart"></figure>
+            <figure id="bar-chart" class="chart-section" aria-label="Category Breakdown Bar Chart"></figure>
+        </section>
+        <section id="data-table-section" class="dashboard-table-section">
+            <div id="data-table"></div>
+        </section>
+    </main>
+    <script src="data.js"></script>
+</body>
+</html>
